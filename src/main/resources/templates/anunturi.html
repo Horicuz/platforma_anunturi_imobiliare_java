@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Oferte Imobiliare</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <link href="https://cdn.jsdelivr.net/npm/nouislider@14.6.3/distribute/nouislider.min.css" rel="stylesheet">
+
+    <style>
+        /* Stiluri custom pentru slider */
+        .noUi-connect { background: #0d6efd; }
+        .noUi-handle { cursor: grab; border-radius: 50%; }
+        .slider-label { font-size: 0.85rem; font-weight: bold; color: #555; margin-top: 5px; display: block; text-align: center;}
+        /* Efect hover pe card */
+        .transition-zoom:hover { transform: translateY(-5px); transition: transform 0.3s; box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; }
+    </style>
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 px-4 shadow sticky-top">
+    <a class="navbar-brand fw-bold" href="/anunturi">🏠 Imobiliare</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item"><a class="nav-link active" href="/anunturi">Acasă</a></li>
+            <li class="nav-item" th:if="${userLogat != null}">
+                <a class="nav-link text-warning fw-bold" href="/anunturi/adauga"><i class="bi bi-plus-circle-fill"></i> Adaugă Anunț</a>
+            </li>
+        </ul>
+
+        <div class="d-flex align-items-center mt-2 mt-lg-0">
+            <div th:if="${userLogat == null}">
+                <a href="/login" class="btn btn-light btn-sm me-2 fw-bold">Autentificare</a>
+                <a href="/register" class="btn btn-outline-light btn-sm">Înregistrare</a>
+            </div>
+            <div th:if="${userLogat != null}" class="text-white d-flex align-items-center">
+                <span class="me-2 d-none d-lg-inline">Salut, </span>
+                <a href="/profil" class="text-white fw-bold text-decoration-none me-3 border px-3 py-1 rounded hover-overlay">
+                    <i class="bi bi-person-circle"></i> <span th:text="${userLogat.nume}"></span>
+                </a>
+                <a href="/logout" class="btn btn-danger btn-sm" title="Ieșire"><i class="bi bi-box-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid px-4 pb-5">
+    <div class="row">
+
+        <div class="col-lg-3 mb-4">
+            <div class="card shadow border-0 sticky-top" style="top: 90px; z-index: 1;">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-sliders"></i> Filtrează Rezultatele</h5>
+                </div>
+
+                <div class="card-body p-4 bg-light bg-opacity-25">
+                    <form action="/anunturi" method="get" id="filterForm">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Căutare text</label>
+                            <input type="text" name="keyword" class="form-control"
+                                   placeholder="Ex: Lux, Central..."
+                                   minlength="3" maxlength="20" th:value="${paramKeyword}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Sortează după</label>
+                            <select name="sortare" class="form-select" onchange="this.form.submit()">
+                                <option value="noi" th:selected="${param.sortare == null or param.sortare[0] == 'noi'}">
+                                    📅 Cele mai noi
+                                </option>
+                                <option value="vechi" th:selected="${param.sortare != null and param.sortare[0] == 'vechi'}">
+                                    📅 Cele mai vechi
+                                </option>
+
+                                <option value="pret_cresc" th:selected="${param.sortare != null and param.sortare[0] == 'pret_cresc'}">
+                                    💰 Preț (Mic ➜ Mare)
+                                </option>
+                                <option value="pret_desc" th:selected="${param.sortare != null and param.sortare[0] == 'pret_desc'}">
+                                    💰 Preț (Mare ➜ Mic)
+                                </option>
+
+                                <option value="suprafata_cresc" th:selected="${param.sortare != null and param.sortare[0] == 'suprafata_cresc'}">
+                                    📐 Suprafață (Mică ➜ Mare)
+                                </option>
+                                <option value="suprafata_desc" th:selected="${param.sortare != null and param.sortare[0] == 'suprafata_desc'}">
+                                    📐 Suprafață (Mare ➜ Mică)
+                                </option>
+
+                                <option value="an_cresc" th:selected="${param.sortare != null and param.sortare[0] == 'an_cresc'}">
+                                    🏗️ An Construcție (Vechi ➜ Nou)
+                                </option>
+                                <option value="an_desc" th:selected="${param.sortare != null and param.sortare[0] == 'an_desc'}">
+                                    🏗️ An Construcție (Nou ➜ Vechi)
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small">Localitate</label>
+                            <select name="orasId" class="form-select fw-bold text-dark">
+                                <option value="">Toate orașele</option>
+                                <option th:each="oras : ${toateOrasele}"
+                                        th:value="${oras.id}"
+                                        th:text="${oras.numeOras}"
+                                        th:selected="${paramOrasId != null && paramOrasId == oras.id}"></option>
+                            </select>
+                        </div>
+
+                        <hr class="text-muted">
+
+                        <div class="mb-4 pt-2">
+                            <label class="fw-bold small mb-2">Interval Preț (€)</label>
+                            <div class="input-group">
+                                <input type="number" name="minPret" class="form-control" placeholder="Min"
+                                       min="100" max="100000000" step="100" th:value="${paramMinPret}">
+                                <span class="input-group-text">-</span>
+                                <input type="number" name="maxPret" class="form-control" placeholder="Max"
+                                       min="100" max="100000000" step="100" th:value="${paramMaxPret}">
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="fw-bold small mb-2">Suprafață (mp)</label>
+                            <div class="input-group">
+                                <input type="number" name="minMp" class="form-control" placeholder="Min"
+                                       min="1" max="100000" th:value="${paramMinMp}">
+                                <span class="input-group-text">-</span>
+                                <input type="number" name="maxMp" class="form-control" placeholder="Max"
+                                       min="1" max="100000" th:value="${paramMaxMp}">
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="fw-bold small mb-2">An Construcție</label>
+                            <div id="slider-an" class="mb-2"></div>
+                            <span class="slider-label" id="label-an"></span>
+                            <input type="hidden" name="minAn" id="input-min-an" th:value="${paramMinAn}">
+                            <input type="hidden" name="maxAn" id="input-max-an" th:value="${paramMaxAn}">
+                        </div>
+
+                        <hr class="text-muted">
+
+                        <div class="mb-3">
+                            <label class="fw-bold small mb-2">Facilități</label>
+                            <div class="border rounded bg-white p-3" style="max-height: 150px; overflow-y: auto;">
+                                <div class="form-check" th:each="fac : ${toateFacilitatile}">
+                                    <input class="form-check-input" type="checkbox" name="facilitatiIds"
+                                           th:value="${fac.id}"
+                                           th:checked="${param.facilitatiIds != null && #lists.contains(param.facilitatiIds, fac.id + '')}">
+                                    <label class="form-check-label small" th:text="${fac.numeFacilitate}"></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary fw-bold py-2">
+                                Aplică Filtrele
+                            </button>
+                            <a href="/anunturi" class="btn btn-outline-secondary btn-sm">
+                                Resetează tot
+                            </a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <div th:if="${listaAnunturi.isEmpty()}" class="alert alert-warning text-center p-5 shadow-sm rounded">
+                <i class="bi bi-search fs-1 mb-3 text-secondary"></i>
+                <h4>Nu am găsit anunțuri.</h4>
+                <p class="text-muted">Încearcă să relaxezi criteriile de căutare.</p>
+                <a href="/anunturi" class="btn btn-primary mt-2">Vezi toate anunțurile</a>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-4" th:each="anunt : ${listaAnunturi}">
+                    <div class="card h-100 shadow-sm border-0 transition-zoom">
+
+                        <div style="height: 220px; overflow: hidden; position: relative;">
+                            <a th:href="@{'/anunturi/detalii/' + ${anunt.id}}" class="text-decoration-none text-dark">
+                                <div th:if="${!anunt.imagini.isEmpty()}">
+                                    <img th:src="@{'/uploads/' + ${anunt.imagini[0].url}}" class="card-img-top" style="object-fit: cover; height: 220px; width: 100%;">
+                                </div>
+                                <div th:if="${anunt.imagini.isEmpty()}" class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 220px;">
+                                    <i class="bi bi-images fs-1"></i>
+                                </div>
+                            </a>
+                            <span class="position-absolute bottom-0 end-0 bg-success text-white px-3 py-1 fw-bold m-2 rounded">
+                                <span th:text="${anunt.pret}"></span> €
+                            </span>
+                        </div>
+
+                        <div class="card-body">
+                            <a th:href="@{'/anunturi/detalii/' + ${anunt.id}}" class="text-decoration-none">
+                                <h5 class="card-title text-primary fw-bold text-truncate" th:text="${anunt.titlu}"></h5>
+                            </a>
+                            <h6 class="card-subtitle mb-2 text-muted small">
+                                <i class="bi bi-geo-alt-fill"></i> <span th:text="${anunt.localitate.numeOras}"></span>
+                            </h6>
+                            <div class="d-flex justify-content-between small text-secondary mb-3">
+                                <span><i class="bi bi-aspect-ratio"></i> <span th:text="${anunt.proprietate.suprafata}"></span> mp</span>
+                                <span><i class="bi bi-house"></i> <span th:text="${anunt.proprietate.nrCamere}"></span> cam.</span>
+                            </div>
+                        </div>
+
+                        <div class="card-footer bg-white border-top-0 pb-3">
+
+                            <a th:href="@{'/anunturi/detalii/' + ${anunt.id}}" class="btn btn-sm btn-outline-primary w-100 rounded-pill mb-2">
+                                Vezi Detalii
+                            </a>
+
+                            <div th:if="${userLogat != null && userLogat.rol == 'ADMIN'}"
+                                 class="d-flex justify-content-between border-top pt-2 mt-2">
+
+                                <span class="badge bg-danger align-self-center">ADMIN</span>
+
+                                <div>
+                                    <a th:href="@{'/anunturi/editeaza/' + ${anunt.id}}" class="btn btn-sm btn-primary py-0" title="Editează">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+
+                                    <a th:href="@{'/anunturi/sterge/' + ${anunt.id}}"
+                                       class="btn btn-sm btn-danger py-0"
+                                       onclick="return confirm('ADMIN: Ștergi definitiv acest anunț?');" title="Șterge">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/nouislider@14.6.3/distribute/nouislider.min.js"></script>
+
+<script th:inline="javascript">
+    // Functie helper pentru creare slider
+    function createSlider(idSlider, idInputMin, idInputMax, idLabel, minGlobal, maxGlobal, suffix) {
+        var slider = document.getElementById(idSlider);
+        var inputMin = document.getElementById(idInputMin);
+        var inputMax = document.getElementById(idInputMax);
+        var label = document.getElementById(idLabel);
+
+        var startMin = inputMin.value ? parseInt(inputMin.value) : minGlobal;
+        var startMax = inputMax.value ? parseInt(inputMax.value) : maxGlobal;
+
+        noUiSlider.create(slider, {
+            start: [startMin, startMax],
+            connect: true,
+            range: {
+                'min': minGlobal,
+                'max': maxGlobal
+            },
+            step: 1,
+            format: {
+                to: function (value) { return Math.round(value); },
+                from: function (value) { return Number(value); }
+            }
+        });
+
+        slider.noUiSlider.on('update', function (values, handle) {
+            inputMin.value = values[0];
+            inputMax.value = values[1];
+            var val1 = parseInt(values[0]);
+            var val2 = parseInt(values[1]);
+            label.innerHTML = val1 + " " + suffix + " — " + val2 + " " + suffix;
+        });
+    }
+
+    // --- 1. INITIALIZARE SLIDER AN (1800 - 2030) ---
+    createSlider('slider-an', 'input-min-an', 'input-max-an', 'label-an', 1800, 2030, '');
+
+</script>
+
+</body>
+</html>
